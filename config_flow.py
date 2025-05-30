@@ -46,6 +46,7 @@ class PlaceholderHub:
 async def connection_trial(hass: HomeAssistant, data: dict[str, Any]) -> None:
     client = SesameClient(data[CONF_MAC], base64.b64decode(data["private_key"]))
     await client.connect()
+    await client.disconnect()
 
 
 class SesameConfigFlow(ConfigFlow, domain=DOMAIN):
