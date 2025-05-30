@@ -1,0 +1,13 @@
+{
+  "domain": "sesameos3",
+  "name": "SesameOS 3",
+  "codeowners": [
+    "@kasmide"
+  ],
+  "config_flow": true,
+  "dependencies": ["bluetooth_adapters"],
+  "documentation": "",
+  "iot_class": "local_push",
+  "requirements": ["sesameos3client@git+https://github.com/kasmide/python-sesameos3.git@master"],
+  "version": "0.1.0"
+}
