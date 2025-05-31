@@ -1,13 +1,55 @@
 {
     "entity": {
         "binary_sensor": {
-            "clutch_failed": { "name": "Clutch Failed" },
-            "lock_range": { "name": "Lock Range" },
-            "unlock_range": { "name": "Unlock Range" },
-            "critical": { "name": "Critical" },
-            "stop": { "name": "Stop" },
-            "low_battery": { "name": "Low Battery" },
-            "clockwise": { "name": "Clockwise" }
+            "clutch_failed": {
+                "name": "Clutch Failed",
+                "state": {
+                    "on": "Failed",
+                    "off": "No"
+                }
+            },
+            "lock_range": {
+                "name": "Lock Range",
+                "state": {
+                    "on": "In Range",
+                    "off": "Out of Range"
+                }
+            },
+            "unlock_range": {
+                "name": "Unlock Range",
+                "state": {
+                    "on": "In Range",
+                    "off": "Out of Range"
+                }
+            },
+            "critical": {
+                "name": "Critical",
+                "state": {
+                    "on": "Yes",
+                    "off": "No"
+                }
+            },
+            "stop": {
+                "name": "Stop",
+                "state": {
+                    "on": "Stopped",
+                    "off": "Moving"
+                }
+            },
+            "low_battery": {
+                "name": "Low Battery",
+                "state": {
+                    "on": "Low",
+                    "off": "Normal"
+                }
+            },
+            "clockwise": {
+                "name": "Rotation Direction",
+                "state": {
+                    "on": "CW",
+                    "off": "CCW"
+                }
+            }
         },
         "sensor": {
             "battery": { "name": "Battery" },

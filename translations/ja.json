@@ -1,13 +1,55 @@
 {
     "entity": {
         "binary_sensor": {
-            "clutch_failed": { "name": "クラッチ失敗" },
-            "lock_range": { "name": "施錠範囲内" },
-            "unlock_range": { "name": "解錠範囲内" },
-            "critical": { "name": "致命的な問題" },
-            "stop": { "name": "静止" },
-            "low_battery": { "name": "バッテリ残量低下" },
-            "clockwise": { "name": "時計回り" }
+            "clutch_failed": {
+                "name": "クラッチ失敗",
+                "state": {
+                    "on": "失敗",
+                    "off": "問題なし"
+                }
+            },
+            "lock_range": {
+                "name": "施錠範囲",
+                "state": {
+                    "on": "範囲内",
+                    "off": "範囲外"
+                }
+            },
+            "unlock_range": {
+                "name": "解錠範囲",
+                "state": {
+                    "on": "範囲内",
+                    "off": "範囲外"
+                }
+            },
+            "critical": {
+                "name": "致命的な問題",
+                "state": {
+                    "on": "あり",
+                    "off": "なし"
+                }
+            },
+            "stop": {
+                "name": "静止",
+                "state": {
+                    "on": "静止中",
+                    "off": "動作中"
+                }
+            },
+            "low_battery": {
+                "name": "バッテリ残量低下",
+                "state": {
+                    "on": "低下",
+                    "off": "問題なし"
+                }
+            },
+            "clockwise": {
+                "name": "回転方向",
+                "state": {
+                    "on": "時計回り",
+                    "off": "反時計回り"
+                }
+            }
         },
         "sensor": {
             "battery": { "name": "バッテリ" },
