@@ -3,21 +3,19 @@
 from __future__ import annotations
 import base64
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import Platform, CONF_MAC
+from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
-from sesameos3client import SesameClient
+
+from .devices import SesameDevice, Sesame5, SesameConfigEntry
 
 _PLATFORMS: list[Platform] = [Platform.LOCK]
 
-type SesameConfigEntry = ConfigEntry[SesameClient]
-
-
 async def async_setup_entry(hass: HomeAssistant, entry: SesameConfigEntry) -> bool:
     """Set up SesameOS 3 from a config entry."""
-    entry.runtime_data = SesameClient(entry.data[CONF_MAC], base64.b64decode(entry.data["private_key"]))
+    entry.runtime_data = Sesame5(entry)
     await entry.runtime_data.connect()
-
-    await hass.config_entries.async_forward_entry_setups(entry, _PLATFORMS)
+    await entry.runtime_data.populate_device_info(entry)
+    await hass.config_entries.async_forward_entry_setups(entry, entry.runtime_data.offers)
 
     return True
 

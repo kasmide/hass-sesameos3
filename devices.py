@@ -1,0 +1,196 @@
+from abc import abstractmethod
+import base64
+from typing import Optional, Callable, Any
+from homeassistant.const import EntityCategory, Platform, CONF_MAC
+from homeassistant.components.number import NumberEntity, NumberDeviceClass, NumberMode
+from homeassistant.components.lock import LockEntity
+from homeassistant.components.sensor import SensorEntity, SensorDeviceClass
+from homeassistant.components.binary_sensor import BinarySensorEntity, BinarySensorDeviceClass
+from homeassistant.helpers.device_registry import format_mac, DeviceInfo
+
+from sesameos3client import Event, SesameClient
+from propcache.api import cached_property
+
+from sesameos3client import SesameClient, EventData, Event
+from homeassistant.config_entries import ConfigEntry
+type SesameConfigEntry = ConfigEntry[SesameDevice]
+
+class SesameDevice:
+    offers: list[Platform] = []
+    device_info: Optional[DeviceInfo]
+    def __init__(self, entry: SesameConfigEntry) -> None:
+        self.client = SesameClient(entry.data[CONF_MAC], base64.b64decode(entry.data["private_key"]))
+        self.device_info = None
+        self.entry = entry
+
+    async def connect(self):
+        await self.client.connect()
+
+    async def disconnect(self):
+        await self.client.disconnect()
+
+    async def populate_device_info(self, entry: SesameConfigEntry) -> None:
+        self.device_info = DeviceInfo(
+            identifiers={(entry.domain, format_mac(entry.data[CONF_MAC]))},
+            name=entry.title,
+            manufacturer="CANDY HOUSE JAPAN, Inc."
+        )
+    @abstractmethod
+    def get_entities(self, entity_type: Platform):
+        raise NotImplementedError("Subclasses must implement get_entities method")
+
+class Sesame5(SesameDevice):
+    '''
+    class MechStatus:
+        battery: int
+        target: int
+        position: int
+        clutch_failed: bool
+        lock_range: bool
+        unlock_range: bool
+        critical: bool
+        stop: bool
+        low_battery: bool
+        clockwise: bool'''
+    
+    class MechStatusSensor(SensorEntity):
+        _attr_has_entity_name = True
+        _attr_should_poll = False
+        _attr_entity_category = EntityCategory.DIAGNOSTIC
+        
+        def __init__(self, device: "Sesame5", name: str,
+                     attr_name: str,
+                     icon: str = "mdi:information",
+                     unit: Optional[str] = None,
+                     device_class: Optional[SensorDeviceClass] = None) -> None:
+            super().__init__()
+            self._client = device.client
+            self._client.add_listener(Event.MechStatusEvent, self._on_mech_status)
+            self._value_name = attr_name
+            self._attr_name = name
+            self._attr_icon = icon
+            self._attr_native_unit_of_measurement = unit
+            self._attr_device_class = device_class
+            self._attr_unique_id = format_mac(device.entry.data[CONF_MAC]) + "_" + attr_name
+            self._attr_device_info = device.device_info
+            if device.client.mech_status is not None:
+                self._attr_native_value = getattr(device.client.mech_status, self._value_name)
+
+        def _on_mech_status(self, event: Event.MechStatusEvent, metadata) -> None:
+            self._attr_native_value = getattr(event.response, self._value_name)
+            self.async_write_ha_state()
+
+    class MechStatusBinarySensor(BinarySensorEntity):
+        _attr_has_entity_name = True
+        _attr_should_poll = False
+        _attr_entity_category = EntityCategory.DIAGNOSTIC
+        
+        def __init__(self, device: "Sesame5", name: str, 
+                     attr_name: str,
+                     icon: str = "mdi:information",
+                     device_class: Optional[BinarySensorDeviceClass] = None) -> None:
+            super().__init__()
+            self._client = device.client
+            self._client.add_listener(Event.MechStatusEvent, self._on_mech_status)
+            self._value_name = attr_name
+            self._attr_name = name
+            self._attr_icon = icon
+            self._attr_device_class = device_class
+            self._attr_unique_id = format_mac(device.entry.data[CONF_MAC]) + "_" + attr_name
+            self._attr_device_info = device.device_info
+            if device.client.mech_status is not None:
+                self._attr_is_on = getattr(device.client.mech_status, self._value_name)
+
+        def _on_mech_status(self, event: Event.MechStatusEvent, metadata) -> None:
+            self._attr_is_on = getattr(event.response, self._value_name)
+            self.async_write_ha_state()
+
+    class SesameLock(LockEntity):
+        _attr_has_entity_name = True
+        _client: SesameClient
+        _last_mechstatus: Optional[EventData.MechStatus]
+        _attr_should_poll = False
+        def __init__(self, device: "Sesame5") -> None:
+            self._client = device.client
+            self._client.add_listener(Event.MechStatusEvent, self._on_mech_status)
+            self._attr_unique_id = format_mac(device.entry.data[CONF_MAC])
+            self._last_mechstatus = self._client.mech_status
+            self._attr_name = None
+            self._attr_device_info = device.device_info
+
+        async def async_lock(self, **kwargs) -> None:
+            await self._client.lock("Home Assistant")
+
+        async def async_unlock(self, **kwargs) -> None:
+            await self._client.unlock("Home Assistant")
+
+        @cached_property
+        def is_locked(self) -> Optional[bool]:
+            if self._last_mechstatus is None:
+                return None
+            else:
+                return self._last_mechstatus.lock_range
+
+        def _on_mech_status(self, event: Event.MechStatusEvent, metadata) -> None:
+            self._last_mechstatus = event.response
+            self._attr_is_locked = self._last_mechstatus.lock_range
+            self.async_write_ha_state()
+
+    class AutolockTime(NumberEntity):
+        _attr_has_entity_name = True
+        _attr_should_poll = False
+        _attr_name = "Autolock"
+        _attr_entity_category = EntityCategory.CONFIG
+        _attr_icon = "mdi:timer-lock"
+        _attr_device_class = NumberDeviceClass.DURATION
+        _attr_native_unit_of_measurement = "s"
+        _attr_native_max_value = 65535
+        _attr_native_min_value = 0
+        _attr_mode = NumberMode.BOX
+        def __init__(self, device: "Sesame5") -> None:
+            super().__init__()
+            self._client = device.client
+            self._client.add_listener(Event.MechSettingsEvent, self._on_mech_settings)
+            if device.client.mech_settings is not None:
+                self._attr_native_value = device.client.mech_settings.auto_lock_seconds
+            self._attr_unique_id = format_mac(device.entry.data[CONF_MAC]) + "_autolock"
+            self._attr_device_info = device.device_info
+        def _on_mech_settings(self, event: Event.MechSettingsEvent, metadata) -> None:
+            self._attr_native_value = event.response.auto_lock_seconds
+            self.async_write_ha_state()
+        async def async_set_native_value(self, value: float) -> None:
+            await self._client.set_autolock_time(int(value))
+    offers = [Platform.LOCK, Platform.NUMBER, Platform.SENSOR, Platform.BINARY_SENSOR]
+
+    def __init__(self, entry: SesameConfigEntry) -> None:
+        super().__init__(entry)
+
+    async def populate_device_info(self, entry: SesameConfigEntry) -> None:
+        await super().populate_device_info(entry)
+        assert self.device_info is not None
+        self.device_info["model"] = "Sesame 5"
+    
+    def get_entities(self, entity_type: Platform):
+        match entity_type:
+            case Platform.LOCK:
+                return [self.SesameLock(self)]
+            case Platform.NUMBER:
+                return [self.AutolockTime(self)]
+            case Platform.SENSOR:
+                return [
+                    self.MechStatusSensor(self, "Battery", "battery", "mdi:battery", "mV", SensorDeviceClass.VOLTAGE),
+                    self.MechStatusSensor(self, "Target", "target", "mdi:target"),
+                    self.MechStatusSensor(self, "Position", "position", "mdi:angle-acute"),
+                ]
+            case Platform.BINARY_SENSOR:
+                return [
+                    self.MechStatusBinarySensor(self, "Clutch Failed", "clutch_failed", "mdi:alert", BinarySensorDeviceClass.PROBLEM),
+                    self.MechStatusBinarySensor(self, "Lock Range", "lock_range", "mdi:lock"),
+                    self.MechStatusBinarySensor(self, "Unlock Range", "unlock_range", "mdi:lock-open-variant"),
+                    self.MechStatusBinarySensor(self, "Critical", "critical", "mdi:alert-circle", BinarySensorDeviceClass.PROBLEM),
+                    self.MechStatusBinarySensor(self, "Stop", "stop", "mdi:stop-circle"),
+                    self.MechStatusBinarySensor(self, "Low Battery", "low_battery", "mdi:battery-alert", BinarySensorDeviceClass.BATTERY),
+                    self.MechStatusBinarySensor(self, "Clockwise", "clockwise", "mdi:rotate-right"),
+                ]
+            case _:
+                return []
