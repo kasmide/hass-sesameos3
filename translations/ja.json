@@ -1,0 +1,38 @@
+{
+    "entity": {
+        "binary_sensor": {
+            "clutch_failed": { "name": "クラッチ失敗" },
+            "lock_range": { "name": "施錠範囲内" },
+            "unlock_range": { "name": "解錠範囲内" },
+            "critical": { "name": "致命的な問題" },
+            "stop": { "name": "静止" },
+            "low_battery": { "name": "バッテリ残量低下" },
+            "clockwise": { "name": "時計回り" }
+        },
+        "sensor": {
+            "battery": { "name": "バッテリ" },
+            "target": { "name": "目標" },
+            "position": { "name": "位置" }
+        },
+        "lock": {
+            "sesame_lock": {
+                "name": "セサミ",
+                "state_attributes": {
+                    "changed_by": {
+                        "state": {
+                            "autolock": "オートロック",
+                            "bluetooth": "Bluetooth",
+                            "web": "Web",
+                            "manual": "手動"
+                        }
+                    }
+                }
+            }
+        },
+        "number": {
+            "autolock_time": {
+                "name": "オートロック時間"
+            }
+        }
+    }
+}

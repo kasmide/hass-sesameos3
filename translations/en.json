@@ -1,0 +1,38 @@
+{
+    "entity": {
+        "binary_sensor": {
+            "clutch_failed": { "name": "Clutch Failed" },
+            "lock_range": { "name": "Lock Range" },
+            "unlock_range": { "name": "Unlock Range" },
+            "critical": { "name": "Critical" },
+            "stop": { "name": "Stop" },
+            "low_battery": { "name": "Low Battery" },
+            "clockwise": { "name": "Clockwise" }
+        },
+        "sensor": {
+            "battery": { "name": "Battery" },
+            "target": { "name": "Target" },
+            "position": { "name": "Position" }
+        },
+        "lock": {
+            "sesame_lock": {
+                "name": "Sesame",
+                "state_attributes": {
+                    "changed_by": {
+                        "state": {
+                            "autolock": "Autolock",
+                            "bluetooth": "Bluetooth",
+                            "web": "Web",
+                            "manual": "Manual"
+                        }
+                    }
+                }
+            }
+        },
+        "number": {
+            "autolock_time": {
+                "name": "Autolock Time"
+            }
+        }
+    }
+}

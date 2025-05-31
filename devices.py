@@ -47,7 +47,7 @@ class Sesame5(SesameDevice):
         _attr_should_poll = False
         _attr_entity_category = EntityCategory.DIAGNOSTIC
         
-        def __init__(self, device: "Sesame5", name: str,
+        def __init__(self, device: "Sesame5",
                      attr_name: str,
                      icon: str = "mdi:information",
                      unit: Optional[str] = None,
@@ -57,7 +57,7 @@ class Sesame5(SesameDevice):
             self._client = device.client
             self._client.add_listener(Event.MechStatusEvent, self._on_mech_status)
             self._value_name = attr_name
-            self._attr_name = name
+            self._attr_translation_key = attr_name
             self._attr_icon = icon
             self._attr_native_unit_of_measurement = unit
             self._attr_device_class = device_class
@@ -76,7 +76,7 @@ class Sesame5(SesameDevice):
         _attr_should_poll = False
         _attr_entity_category = EntityCategory.DIAGNOSTIC
         
-        def __init__(self, device: "Sesame5", name: str, 
+        def __init__(self, device: "Sesame5", 
                      attr_name: str,
                      icon: str = "mdi:information",
                      device_class: Optional[BinarySensorDeviceClass] = None,
@@ -85,7 +85,7 @@ class Sesame5(SesameDevice):
             self._client = device.client
             self._client.add_listener(Event.MechStatusEvent, self._on_mech_status)
             self._value_name = attr_name
-            self._attr_name = name
+            self._attr_translation_key = attr_name
             self._attr_icon = icon
             self._attr_device_class = device_class
             self._attr_unique_id = format_mac(device.entry.data[CONF_MAC]) + "_" + attr_name
@@ -103,6 +103,7 @@ class Sesame5(SesameDevice):
         _client: SesameClient
         _last_mechstatus: Optional[EventData.MechStatus]
         _attr_should_poll = False
+        _attr_translation_key = "sesame_lock"
         def __init__(self, device: "Sesame5") -> None:
             self._client = device.client
             self._client.add_listener(Event.MechStatusEvent, self._on_mech_status)
@@ -132,20 +133,20 @@ class Sesame5(SesameDevice):
             if hist_entry.response is not None:
                 match hist_entry.response.type:
                     case history_type.AUTOLOCK:
-                        self._attr_changed_by = "Autolock"
+                        self._attr_changed_by = "autolock"
                     case history_type.BLE_LOCK | history_type.BLE_UNLOCK:
-                        self._attr_changed_by = "Bluetooth"
+                        self._attr_changed_by = "bluetooth"
                     case history_type.WEB_LOCK | history_type.WEB_UNLOCK:
-                        self._attr_changed_by = "Web"
+                        self._attr_changed_by = "web"
                     case history_type.MANUAL_LOCKED | history_type.MANUAL_UNLOCKED | history_type.MANUAL_ELSE:
-                        self._attr_changed_by = "Manual"
+                        self._attr_changed_by = "manual"
                     case _:
                         self._attr_changed_by = None
             self.async_write_ha_state()
     class AutolockTime(NumberEntity):
         _attr_has_entity_name = True
         _attr_should_poll = False
-        _attr_name = "Autolock"
+        _attr_translation_key = "autolock_time"
         _attr_entity_category = EntityCategory.CONFIG
         _attr_icon = "mdi:timer-lock"
         _attr_device_class = NumberDeviceClass.DURATION
@@ -184,19 +185,19 @@ class Sesame5(SesameDevice):
                 return [self.AutolockTime(self)]
             case Platform.SENSOR:
                 return [
-                    self.MechStatusSensor(self, "Battery", "battery", "mdi:battery", "mV", SensorDeviceClass.VOLTAGE, default_disabled=True),
-                    self.MechStatusSensor(self, "Target", "target", "mdi:target", default_disabled=True),
-                    self.MechStatusSensor(self, "Position", "position", "mdi:angle-acute"),
+                    self.MechStatusSensor(self, "battery", "mdi:battery", "mV", SensorDeviceClass.VOLTAGE, default_disabled=True),
+                    self.MechStatusSensor(self, "target", "mdi:target", default_disabled=True),
+                    self.MechStatusSensor(self, "position", "mdi:angle-acute"),
                 ]
             case Platform.BINARY_SENSOR:
                 return [
-                    self.MechStatusBinarySensor(self, "Clutch Failed", "clutch_failed", "mdi:alert", BinarySensorDeviceClass.PROBLEM, default_disabled=True),
-                    self.MechStatusBinarySensor(self, "Lock Range", "lock_range", "mdi:lock", default_disabled=True),
-                    self.MechStatusBinarySensor(self, "Unlock Range", "unlock_range", "mdi:lock-open-variant", default_disabled=True),
-                    self.MechStatusBinarySensor(self, "Critical", "critical", "mdi:alert-circle", BinarySensorDeviceClass.PROBLEM),
-                    self.MechStatusBinarySensor(self, "Stop", "stop", "mdi:stop-circle", default_disabled=True),
-                    self.MechStatusBinarySensor(self, "Low Battery", "low_battery", "mdi:battery-alert", BinarySensorDeviceClass.BATTERY),
-                    self.MechStatusBinarySensor(self, "Clockwise", "clockwise", "mdi:rotate-right", default_disabled=True),
+                    self.MechStatusBinarySensor(self, "clutch_failed", "mdi:alert", BinarySensorDeviceClass.PROBLEM, default_disabled=True),
+                    self.MechStatusBinarySensor(self, "lock_range", "mdi:lock", default_disabled=True),
+                    self.MechStatusBinarySensor(self, "unlock_range", "mdi:lock-open-variant", default_disabled=True),
+                    self.MechStatusBinarySensor(self, "critical", "mdi:alert-circle", BinarySensorDeviceClass.PROBLEM),
+                    self.MechStatusBinarySensor(self, "stop", "mdi:stop-circle", default_disabled=True),
+                    self.MechStatusBinarySensor(self, "low_battery", "mdi:battery-alert", BinarySensorDeviceClass.BATTERY),
+                    self.MechStatusBinarySensor(self, "clockwise", "mdi:rotate-right", default_disabled=True),
                 ]
             case _:
                 return []
