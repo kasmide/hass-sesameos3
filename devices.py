@@ -7,7 +7,7 @@ from homeassistant.components.number import NumberEntity, NumberDeviceClass, Num
 from homeassistant.components.lock import LockEntity
 from homeassistant.components.sensor import SensorEntity, SensorDeviceClass
 from homeassistant.components.binary_sensor import BinarySensorEntity, BinarySensorDeviceClass
-from homeassistant.helpers.device_registry import format_mac, DeviceInfo
+from homeassistant.helpers.device_registry import format_mac, DeviceInfo, CONNECTION_BLUETOOTH
 
 from sesameos3client import Event, SesameClient, EventData
 from propcache.api import cached_property
@@ -33,6 +33,7 @@ class SesameDevice:
     async def populate_device_info(self, entry: SesameConfigEntry) -> None:
         self.device_info = DeviceInfo(
             identifiers={(entry.domain, format_mac(entry.data[CONF_MAC]))},
+            connections={(CONNECTION_BLUETOOTH, entry.data[CONF_MAC])},
             name=entry.title,
             manufacturer="CANDY HOUSE JAPAN, Inc."
         )
