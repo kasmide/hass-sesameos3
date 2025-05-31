@@ -27,22 +27,6 @@ STEP_USER_DATA_SCHEMA = vol.Schema(
     }
 )
 
-
-class PlaceholderHub:
-    """Placeholder class to make tests pass.
-
-    TODO Remove this placeholder class and replace with things from your PyPI package.
-    """
-
-    def __init__(self, host: str) -> None:
-        """Initialize."""
-        self.host = host
-
-    async def authenticate(self, username: str, password: str) -> bool:
-        """Test if we can authenticate with the host."""
-        return True
-
-
 async def connection_trial(hass: HomeAssistant, data: dict[str, Any]) -> None:
     client = SesameClient(data[CONF_MAC], base64.b64decode(data["private_key"]))
     await client.connect()

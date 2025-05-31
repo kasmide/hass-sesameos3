@@ -37,13 +37,6 @@ class SesameLock(LockEntity):
     async def async_unlock(self, **kwargs) -> None:
         await self._client.unlock("Home Assistant")
 
-    @cached_property
-    def is_locked(self) -> Optional[bool]:
-        if self._last_mechstatus is None:
-            return None
-        else:
-            return self._last_mechstatus.lock_range
-
     def _on_mech_status(self, event: Event.MechStatusEvent, metadata) -> None:
         self._last_mechstatus = event.response
         self._attr_is_locked = self._last_mechstatus.lock_range
