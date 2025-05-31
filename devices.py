@@ -1,4 +1,5 @@
 from abc import abstractmethod
+import asyncio
 import base64
 from typing import Optional, Callable, Any
 from homeassistant.const import EntityCategory, Platform, CONF_MAC
@@ -8,7 +9,7 @@ from homeassistant.components.sensor import SensorEntity, SensorDeviceClass
 from homeassistant.components.binary_sensor import BinarySensorEntity, BinarySensorDeviceClass
 from homeassistant.helpers.device_registry import format_mac, DeviceInfo
 
-from sesameos3client import Event, SesameClient
+from sesameos3client import Event, SesameClient, EventData
 from propcache.api import cached_property
 
 from sesameos3client import SesameClient, EventData, Event
@@ -108,6 +109,9 @@ class Sesame5(SesameDevice):
             self._last_mechstatus = self._client.mech_status
             self._attr_name = None
             self._attr_device_info = device.device_info
+            if self._last_mechstatus is not None:
+                self._attr_is_locked = self._last_mechstatus.lock_range
+            asyncio.create_task(self.set_changed_by())
 
         async def async_lock(self, **kwargs) -> None:
             await self._client.lock("Home Assistant")
@@ -115,18 +119,28 @@ class Sesame5(SesameDevice):
         async def async_unlock(self, **kwargs) -> None:
             await self._client.unlock("Home Assistant")
 
-        @cached_property
-        def is_locked(self) -> Optional[bool]:
-            if self._last_mechstatus is None:
-                return None
-            else:
-                return self._last_mechstatus.lock_range
-
-        def _on_mech_status(self, event: Event.MechStatusEvent, metadata) -> None:
+        async def _on_mech_status(self, event: Event.MechStatusEvent, metadata) -> None:
             self._last_mechstatus = event.response
             self._attr_is_locked = self._last_mechstatus.lock_range
             self.async_write_ha_state()
+            await self.set_changed_by()
 
+        async def set_changed_by(self):
+            history_type = EventData.HistoryData.HistoryType
+            hist_entry = await self._client.get_history_tail()
+            if hist_entry.response is not None:
+                match hist_entry.response.type:
+                    case history_type.AUTOLOCK:
+                        self._attr_changed_by = "Autolock"
+                    case history_type.BLE_LOCK | history_type.BLE_UNLOCK:
+                        self._attr_changed_by = "Bluetooth"
+                    case history_type.WEB_LOCK | history_type.WEB_UNLOCK:
+                        self._attr_changed_by = "Web"
+                    case history_type.MANUAL_LOCKED | history_type.MANUAL_UNLOCKED | history_type.MANUAL_ELSE:
+                        self._attr_changed_by = "Manual"
+                    case _:
+                        self._attr_changed_by = None
+            self.async_write_ha_state()
     class AutolockTime(NumberEntity):
         _attr_has_entity_name = True
         _attr_should_poll = False
