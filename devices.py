@@ -40,19 +40,6 @@ class SesameDevice:
         raise NotImplementedError("Subclasses must implement get_entities method")
 
 class Sesame5(SesameDevice):
-    '''
-    class MechStatus:
-        battery: int
-        target: int
-        position: int
-        clutch_failed: bool
-        lock_range: bool
-        unlock_range: bool
-        critical: bool
-        stop: bool
-        low_battery: bool
-        clockwise: bool'''
-    
     class MechStatusSensor(SensorEntity):
         _attr_has_entity_name = True
         _attr_should_poll = False
@@ -62,7 +49,8 @@ class Sesame5(SesameDevice):
                      attr_name: str,
                      icon: str = "mdi:information",
                      unit: Optional[str] = None,
-                     device_class: Optional[SensorDeviceClass] = None) -> None:
+                     device_class: Optional[SensorDeviceClass] = None,
+                     default_disabled: bool = False) -> None:
             super().__init__()
             self._client = device.client
             self._client.add_listener(Event.MechStatusEvent, self._on_mech_status)
@@ -73,6 +61,7 @@ class Sesame5(SesameDevice):
             self._attr_device_class = device_class
             self._attr_unique_id = format_mac(device.entry.data[CONF_MAC]) + "_" + attr_name
             self._attr_device_info = device.device_info
+            self._attr_entity_registry_enabled_default = not default_disabled
             if device.client.mech_status is not None:
                 self._attr_native_value = getattr(device.client.mech_status, self._value_name)
 
@@ -88,7 +77,8 @@ class Sesame5(SesameDevice):
         def __init__(self, device: "Sesame5", name: str, 
                      attr_name: str,
                      icon: str = "mdi:information",
-                     device_class: Optional[BinarySensorDeviceClass] = None) -> None:
+                     device_class: Optional[BinarySensorDeviceClass] = None,
+                     default_disabled: bool = False) -> None:
             super().__init__()
             self._client = device.client
             self._client.add_listener(Event.MechStatusEvent, self._on_mech_status)
@@ -98,6 +88,7 @@ class Sesame5(SesameDevice):
             self._attr_device_class = device_class
             self._attr_unique_id = format_mac(device.entry.data[CONF_MAC]) + "_" + attr_name
             self._attr_device_info = device.device_info
+            self._attr_entity_registry_enabled_default = not default_disabled
             if device.client.mech_status is not None:
                 self._attr_is_on = getattr(device.client.mech_status, self._value_name)
 
@@ -178,19 +169,19 @@ class Sesame5(SesameDevice):
                 return [self.AutolockTime(self)]
             case Platform.SENSOR:
                 return [
-                    self.MechStatusSensor(self, "Battery", "battery", "mdi:battery", "mV", SensorDeviceClass.VOLTAGE),
-                    self.MechStatusSensor(self, "Target", "target", "mdi:target"),
+                    self.MechStatusSensor(self, "Battery", "battery", "mdi:battery", "mV", SensorDeviceClass.VOLTAGE, default_disabled=True),
+                    self.MechStatusSensor(self, "Target", "target", "mdi:target", default_disabled=True),
                     self.MechStatusSensor(self, "Position", "position", "mdi:angle-acute"),
                 ]
             case Platform.BINARY_SENSOR:
                 return [
-                    self.MechStatusBinarySensor(self, "Clutch Failed", "clutch_failed", "mdi:alert", BinarySensorDeviceClass.PROBLEM),
-                    self.MechStatusBinarySensor(self, "Lock Range", "lock_range", "mdi:lock"),
-                    self.MechStatusBinarySensor(self, "Unlock Range", "unlock_range", "mdi:lock-open-variant"),
+                    self.MechStatusBinarySensor(self, "Clutch Failed", "clutch_failed", "mdi:alert", BinarySensorDeviceClass.PROBLEM, default_disabled=True),
+                    self.MechStatusBinarySensor(self, "Lock Range", "lock_range", "mdi:lock", default_disabled=True),
+                    self.MechStatusBinarySensor(self, "Unlock Range", "unlock_range", "mdi:lock-open-variant", default_disabled=True),
                     self.MechStatusBinarySensor(self, "Critical", "critical", "mdi:alert-circle", BinarySensorDeviceClass.PROBLEM),
-                    self.MechStatusBinarySensor(self, "Stop", "stop", "mdi:stop-circle"),
+                    self.MechStatusBinarySensor(self, "Stop", "stop", "mdi:stop-circle", default_disabled=True),
                     self.MechStatusBinarySensor(self, "Low Battery", "low_battery", "mdi:battery-alert", BinarySensorDeviceClass.BATTERY),
-                    self.MechStatusBinarySensor(self, "Clockwise", "clockwise", "mdi:rotate-right"),
+                    self.MechStatusBinarySensor(self, "Clockwise", "clockwise", "mdi:rotate-right", default_disabled=True),
                 ]
             case _:
                 return []
