@@ -1,45 +1,17 @@
-from abc import abstractmethod
 import asyncio
-import base64
-from typing import Optional, Callable, Any
+from typing import Optional
 from homeassistant.const import EntityCategory, Platform, CONF_MAC
 from homeassistant.components.number import NumberEntity, NumberDeviceClass, NumberMode
 from homeassistant.components.lock import LockEntity
 from homeassistant.components.sensor import SensorEntity, SensorDeviceClass
 from homeassistant.components.binary_sensor import BinarySensorEntity, BinarySensorDeviceClass
-from homeassistant.helpers.device_registry import format_mac, DeviceInfo, CONNECTION_BLUETOOTH
+from homeassistant.helpers.device_registry import format_mac
 
 from sesameos3client import Event, SesameClient, EventData
-from propcache.api import cached_property
 
 from sesameos3client import SesameClient, EventData, Event
-from homeassistant.config_entries import ConfigEntry
-type SesameConfigEntry = ConfigEntry[SesameDevice]
 
-class SesameDevice:
-    offers: list[Platform] = []
-    device_info: Optional[DeviceInfo]
-    def __init__(self, entry: SesameConfigEntry) -> None:
-        self.client = SesameClient(entry.data[CONF_MAC], base64.b64decode(entry.data["private_key"]))
-        self.device_info = None
-        self.entry = entry
-
-    async def connect(self):
-        await self.client.connect()
-
-    async def disconnect(self):
-        await self.client.disconnect()
-
-    async def populate_device_info(self, entry: SesameConfigEntry) -> None:
-        self.device_info = DeviceInfo(
-            identifiers={(entry.domain, format_mac(entry.data[CONF_MAC]))},
-            connections={(CONNECTION_BLUETOOTH, entry.data[CONF_MAC])},
-            name=entry.title,
-            manufacturer="CANDY HOUSE JAPAN, Inc."
-        )
-    @abstractmethod
-    def get_entities(self, entity_type: Platform):
-        raise NotImplementedError("Subclasses must implement get_entities method")
+from .models import SesameDevice, SesameConfigEntry
 
 class Sesame5(SesameDevice):
     class MechStatusSensor(SensorEntity):

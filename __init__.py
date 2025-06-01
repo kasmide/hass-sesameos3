@@ -1,12 +1,11 @@
 """The SesameOS 3 integration."""
 
 from __future__ import annotations
-import base64
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 
-from .devices import SesameDevice, Sesame5, SesameConfigEntry
+from .devices import Sesame5
+from .models import SesameConfigEntry
 
 _PLATFORMS: list[Platform] = [Platform.LOCK]
 

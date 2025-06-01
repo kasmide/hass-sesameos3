@@ -1,6 +1,6 @@
 from homeassistant.const import Platform
 
-from .devices import SesameConfigEntry
+from .models import SesameConfigEntry
 
 
 async def async_setup_entry(hass, entry: SesameConfigEntry, async_add_entities):
