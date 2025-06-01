@@ -12,8 +12,7 @@ _PLATFORMS: list[Platform] = [Platform.LOCK]
 async def async_setup_entry(hass: HomeAssistant, entry: SesameConfigEntry) -> bool:
     """Set up SesameOS 3 from a config entry."""
     entry.runtime_data = Sesame5(entry)
-    await entry.runtime_data.connect()
-    await entry.runtime_data.populate_device_info(entry)
+    await entry.runtime_data.initialize()
     await hass.config_entries.async_forward_entry_setups(entry, entry.runtime_data.offers)
 
     return True

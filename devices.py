@@ -144,8 +144,8 @@ class Sesame5(SesameDevice):
     def __init__(self, entry: SesameConfigEntry) -> None:
         super().__init__(entry)
 
-    async def populate_device_info(self, entry: SesameConfigEntry) -> None:
-        await super().populate_device_info(entry)
+    async def populate_device_info(self) -> None:
+        await super().populate_device_info()
         assert self.device_info is not None
         self.device_info["model"] = "Sesame 5"
     

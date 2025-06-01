@@ -6,7 +6,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform, CONF_MAC
 from homeassistant.helpers.device_registry import format_mac, DeviceInfo, CONNECTION_BLUETOOTH
 
-from sesameos3client import SesameClient
+from sesameos3client import Event, SesameClient
 
 type SesameConfigEntry = ConfigEntry[SesameDevice]
 
@@ -18,17 +18,24 @@ class SesameDevice(ABC):
         self.device_info = None
         self.entry = entry
 
-    async def connect(self):
+    async def initialize(self):
         await self.client.connect()
+        if self.client.mech_status is None:
+            try:
+                await self.client.wait_for(Event.MechStatusEvent)
+            except TimeoutError:
+                pass
+        await self.populate_device_info()
+        
 
     async def disconnect(self):
         await self.client.disconnect()
 
-    async def populate_device_info(self, entry: SesameConfigEntry) -> None:
+    async def populate_device_info(self) -> None:
         self.device_info = DeviceInfo(
-            identifiers={(entry.domain, format_mac(entry.data[CONF_MAC]))},
-            connections={(CONNECTION_BLUETOOTH, entry.data[CONF_MAC])},
-            name=entry.title,
+            identifiers={(self.entry.domain, format_mac(self.entry.data[CONF_MAC]))},
+            connections={(CONNECTION_BLUETOOTH, self.entry.data[CONF_MAC])},
+            name=self.entry.title,
             manufacturer="CANDY HOUSE JAPAN, Inc."
         )
     @abstractmethod
