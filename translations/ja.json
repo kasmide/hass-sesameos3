@@ -72,8 +72,14 @@
             }
         },
         "number": {
-            "autolock_time": {
+            "auto_lock_seconds": {
                 "name": "オートロック時間"
+            },
+            "lock": {
+                "name": "施錠位置"
+            },
+            "unlock": {
+                "name": "解錠位置"
             }
         }
     }

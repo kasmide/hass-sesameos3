@@ -72,8 +72,14 @@
             }
         },
         "number": {
-            "autolock_time": {
+            "auto_lock_seconds": {
                 "name": "Autolock Time"
+            },
+            "lock": {
+                "name": "Lock Position"
+            },
+            "unlock": {
+                "name": "Unlock Position"
             }
         }
     }

@@ -1,4 +1,5 @@
 import asyncio
+import copy
 from typing import Optional
 from homeassistant.const import EntityCategory, Platform, CONF_MAC
 from homeassistant.components.number import NumberEntity, NumberDeviceClass, NumberMode
@@ -8,8 +9,6 @@ from homeassistant.components.binary_sensor import BinarySensorEntity, BinarySen
 from homeassistant.helpers.device_registry import format_mac
 
 from sesameos3client import Event, SesameClient, EventData
-
-from sesameos3client import SesameClient, EventData, Event
 
 from .models import SesameDevice, SesameConfigEntry
 
@@ -115,30 +114,42 @@ class Sesame5(SesameDevice):
                     case _:
                         self._attr_changed_by = None
             self.async_write_ha_state()
-    class AutolockTime(NumberEntity):
+    class MechSettingsEntryEntity(NumberEntity):
         _attr_has_entity_name = True
         _attr_should_poll = False
-        _attr_translation_key = "autolock_time"
         _attr_entity_category = EntityCategory.CONFIG
-        _attr_icon = "mdi:timer-lock"
-        _attr_device_class = NumberDeviceClass.DURATION
-        _attr_native_unit_of_measurement = "s"
         _attr_native_max_value = 65535
         _attr_native_min_value = 0
         _attr_mode = NumberMode.BOX
-        def __init__(self, device: "Sesame5") -> None:
+        def __init__(self, device: "Sesame5", 
+                     attr_name: str,
+                     unit_of_measurement: str,
+                     icon: str = "mdi:number",
+                     device_class: Optional[NumberDeviceClass] = None) -> None:
             super().__init__()
             self._client = device.client
             self._client.add_listener(Event.MechSettingsEvent, self._on_mech_settings)
+            self._value_name = attr_name
             if device.client.mech_settings is not None:
-                self._attr_native_value = device.client.mech_settings.auto_lock_seconds
-            self._attr_unique_id = format_mac(device.entry.data[CONF_MAC]) + "_autolock"
+                self._attr_native_value = getattr(device.client.mech_settings, self._value_name)
+            self._attr_unique_id = format_mac(device.entry.data[CONF_MAC]) + "_" + attr_name
+            self._attr_translation_key = attr_name
+            self._attr_icon = icon
+            self._attr_native_unit_of_measurement = unit_of_measurement
+            self._attr_device_class = device_class
             self._attr_device_info = device.device_info
+
         def _on_mech_settings(self, event: Event.MechSettingsEvent, metadata) -> None:
-            self._attr_native_value = event.response.auto_lock_seconds
+            self._attr_native_value = getattr(event.response, self._value_name)
             self.async_write_ha_state()
+
         async def async_set_native_value(self, value: float) -> None:
-            await self._client.set_autolock_time(int(value))
+            if self._client.mech_settings is None:
+                raise ValueError("Mech settings not available")
+            new_settings = copy.copy(self._client.mech_settings)
+            setattr(new_settings, self._value_name, int(value))
+            await self._client.set_mech_settings(new_settings)
+
     offers = [Platform.LOCK, Platform.NUMBER, Platform.SENSOR, Platform.BINARY_SENSOR]
 
     def __init__(self, entry: SesameConfigEntry) -> None:
@@ -154,7 +165,11 @@ class Sesame5(SesameDevice):
             case Platform.LOCK:
                 return [self.SesameLock(self)]
             case Platform.NUMBER:
-                return [self.AutolockTime(self)]
+                return [
+                    self.MechSettingsEntryEntity(self, "auto_lock_seconds", "s", "mdi:timer-lock", NumberDeviceClass.DURATION),
+                    self.MechSettingsEntryEntity(self, "lock", "°", "mdi:lock"),
+                    self.MechSettingsEntryEntity(self, "unlock", "°", "mdi:lock-open-variant"),
+                ]
             case Platform.SENSOR:
                 return [
                     self.MechStatusSensor(self, "battery", "mdi:battery", "mV", SensorDeviceClass.VOLTAGE, default_disabled=True),
