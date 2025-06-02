@@ -173,8 +173,8 @@ class Sesame5(SesameDevice):
             case Platform.SENSOR:
                 return [
                     self.MechStatusSensor(self, "battery", "mdi:battery", "mV", SensorDeviceClass.VOLTAGE, default_disabled=True),
-                    self.MechStatusSensor(self, "target", "mdi:target", default_disabled=True),
-                    self.MechStatusSensor(self, "position", "mdi:angle-acute"),
+                    self.MechStatusSensor(self, "target", "mdi:target", "°", default_disabled=True),
+                    self.MechStatusSensor(self, "position", "mdi:angle-acute", "°", ),
                 ]
             case Platform.BINARY_SENSOR:
                 return [
