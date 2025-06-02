@@ -37,9 +37,12 @@ class Sesame5(SesameDevice):
             self._attr_entity_registry_enabled_default = not default_disabled
             if device.client.mech_status is not None:
                 self._attr_native_value = getattr(device.client.mech_status, self._value_name)
+            else:
+                self._attr_available = False
 
         def _on_mech_status(self, event: Event.MechStatusEvent, metadata) -> None:
             self._attr_native_value = getattr(event.response, self._value_name)
+            self._attr_available = True
             self.async_write_ha_state()
 
     class MechStatusBinarySensor(BinarySensorEntity):
@@ -64,9 +67,12 @@ class Sesame5(SesameDevice):
             self._attr_entity_registry_enabled_default = not default_disabled
             if device.client.mech_status is not None:
                 self._attr_is_on = getattr(device.client.mech_status, self._value_name)
+            else:
+                self._attr_available = False
 
         def _on_mech_status(self, event: Event.MechStatusEvent, metadata) -> None:
             self._attr_is_on = getattr(event.response, self._value_name)
+            self._attr_available = True
             self.async_write_ha_state()
 
     class SesameLock(LockEntity):
@@ -132,6 +138,8 @@ class Sesame5(SesameDevice):
             self._value_name = attr_name
             if device.client.mech_settings is not None:
                 self._attr_native_value = getattr(device.client.mech_settings, self._value_name)
+            else:
+                self._attr_available = False
             self._attr_unique_id = format_mac(device.entry.data[CONF_MAC]) + "_" + attr_name
             self._attr_translation_key = attr_name
             self._attr_icon = icon
@@ -141,6 +149,7 @@ class Sesame5(SesameDevice):
 
         def _on_mech_settings(self, event: Event.MechSettingsEvent, metadata) -> None:
             self._attr_native_value = getattr(event.response, self._value_name)
+            self._attr_available = True
             self.async_write_ha_state()
 
         async def async_set_native_value(self, value: float) -> None:
