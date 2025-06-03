@@ -36,7 +36,8 @@ class SesameDevice(ABC):
             identifiers={(self.entry.domain, format_mac(self.entry.data[CONF_MAC]))},
             connections={(CONNECTION_BLUETOOTH, self.entry.data[CONF_MAC])},
             name=self.entry.title,
-            manufacturer="CANDY HOUSE JAPAN, Inc."
+            manufacturer="CANDY HOUSE JAPAN, Inc.",
+            sw_version=await self.client.get_version()
         )
     @abstractmethod
     def get_entities(self, entity_type: Platform):
