@@ -158,7 +158,14 @@ class Sesame5(SesameDevice):
                 raise ValueError("Mech settings not available")
             new_settings = copy.copy(self._client.mech_settings)
             setattr(new_settings, self._value_name, int(value))
-            await self._client.set_mech_settings(new_settings)
+            await self._client.set_mech_settings(new_settings.lock, new_settings.unlock)
+    class AutoLockTimeEntity(MechSettingsEntryEntity):
+        def __init__(self, device: "Sesame5") -> None:
+            super().__init__(device, "auto_lock_seconds", "s", (0, 65535), "mdi:timer-lock", NumberDeviceClass.DURATION)
+
+        async def async_set_native_value(self, value: float) -> None:
+            await self._client.set_autolock_time(int(value))
+
 
     offers = [Platform.LOCK, Platform.NUMBER, Platform.SENSOR, Platform.BINARY_SENSOR]
 
@@ -176,7 +183,7 @@ class Sesame5(SesameDevice):
                 return [self.SesameLock(self)]
             case Platform.NUMBER:
                 return [
-                    self.MechSettingsEntryEntity(self, "auto_lock_seconds", "s", (0, 65535), "mdi:timer-lock", NumberDeviceClass.DURATION),
+                    self.AutoLockTimeEntity(self),
                     self.MechSettingsEntryEntity(self, "lock", "°", (-32768, 32767), "mdi:lock"),
                     self.MechSettingsEntryEntity(self, "unlock", "°", (-32768, 32767), "mdi:lock-open-variant"),
                 ]
