@@ -124,12 +124,11 @@ class Sesame5(SesameDevice):
         _attr_has_entity_name = True
         _attr_should_poll = False
         _attr_entity_category = EntityCategory.CONFIG
-        _attr_native_max_value = 65535
-        _attr_native_min_value = 0
         _attr_mode = NumberMode.BOX
         def __init__(self, device: "Sesame5", 
                      attr_name: str,
                      unit_of_measurement: str,
+                     value_range: tuple[int, int],
                      icon: str = "mdi:number",
                      device_class: Optional[NumberDeviceClass] = None) -> None:
             super().__init__()
@@ -144,6 +143,8 @@ class Sesame5(SesameDevice):
             self._attr_translation_key = attr_name
             self._attr_icon = icon
             self._attr_native_unit_of_measurement = unit_of_measurement
+            self._attr_native_max_value = value_range[1]
+            self._attr_native_min_value = value_range[0]
             self._attr_device_class = device_class
             self._attr_device_info = device.device_info
 
@@ -175,9 +176,9 @@ class Sesame5(SesameDevice):
                 return [self.SesameLock(self)]
             case Platform.NUMBER:
                 return [
-                    self.MechSettingsEntryEntity(self, "auto_lock_seconds", "s", "mdi:timer-lock", NumberDeviceClass.DURATION),
-                    self.MechSettingsEntryEntity(self, "lock", "°", "mdi:lock"),
-                    self.MechSettingsEntryEntity(self, "unlock", "°", "mdi:lock-open-variant"),
+                    self.MechSettingsEntryEntity(self, "auto_lock_seconds", "s", (0, 65535), "mdi:timer-lock", NumberDeviceClass.DURATION),
+                    self.MechSettingsEntryEntity(self, "lock", "°", (-32768, 32767), "mdi:lock"),
+                    self.MechSettingsEntryEntity(self, "unlock", "°", (-32768, 32767), "mdi:lock-open-variant"),
                 ]
             case Platform.SENSOR:
                 return [
