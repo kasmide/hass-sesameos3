@@ -4,6 +4,7 @@ import base64
 import logging
 from typing import Optional, TypeAlias, Callable
 
+from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform, CONF_MAC
 from homeassistant.helpers.device_registry import (
@@ -22,8 +23,8 @@ _LOGGER = logging.getLogger(__name__)
 class SesameDevice(ABC):
     offers: list[Platform] = []
     device_info: Optional[DeviceInfo]
-    def __init__(self, entry: SesameConfigEntry) -> None:
-        self.hass = entry.hass
+    def __init__(self, hass: HomeAssistant, entry: SesameConfigEntry) -> None:
+        self.hass = hass
         self.client = SesameClient(
             entry.data[CONF_MAC], base64.b64decode(entry.data["private_key"])
         )
@@ -32,66 +33,35 @@ class SesameDevice(ABC):
         self._unsub_scanner: Optional[Callable[[], None]] = None
         self.client.on_disconnect(self._on_client_disconnect)
 
-    async def _device_present(self) -> bool:
-        return bluetooth.async_address_present(self.hass, self.entry.data[CONF_MAC])
-
     def _on_client_disconnect(self) -> None:
-        self._start_scan()
+        pass
 
-    def _start_scan(self) -> None:
-        if self._unsub_scanner is not None:
-            return
-        self._unsub_scanner = bluetooth.async_register_callback(
-            self.hass,
-            self._async_device_found,
-            {"address": self.entry.data[CONF_MAC]},
-            bluetooth.BluetoothScanningMode.ACTIVE,
-        )
-
-    def _stop_scan(self) -> None:
-        if self._unsub_scanner is not None:
-            self._unsub_scanner()
-            self._unsub_scanner = None
-
-    def _async_device_found(
-        self, service_info: bluetooth.BluetoothServiceInfoBleak
-    ) -> None:
-        self.hass.async_create_task(self._async_connect(service_info.device))
-
-    async def _async_connect(self, ble_device) -> None:
-        try:
-            await self.client.connect(ble_device)
-        except Exception as err:  # pragma: no cover - connection may fail
-            _LOGGER.warning("Connect failed: %s", err)
-        else:
-            self._stop_scan()
-
+    def _async_device_found(self, _service_info, change) -> None:
+        if not self.client.is_connected:
+            self.hass.async_create_task(self.initialize())
 
     async def initialize(self):
-        if await self._device_present():
-            ble_device = bluetooth.async_ble_device_from_address(
-                self.hass, self.entry.data[CONF_MAC], connectable=True
-            )
-            if ble_device:
-                await self.client.connect(ble_device)
+        if bluetooth.async_address_present(self.hass, self.entry.data[CONF_MAC], connectable=True):
+            if not self.client.is_connected:
+                await self.client.connect()
+            if self.client.mech_status is None:
+                try:
+                    await self.client.wait_for(Event.MechStatusEvent)
+                except TimeoutError:
+                    pass
+            await self.populate_device_info()
 
-        if not self.client.is_connected:
-            _LOGGER.debug(
-                "Device %s not found during initialization", self.entry.data[CONF_MAC]
+    def start_scanning(self) -> None:
+        self.entry.async_on_unload(
+            bluetooth.async_register_callback(
+                self.hass,
+                self._async_device_found,
+                {"address": self.entry.data[CONF_MAC]},
+                bluetooth.BluetoothScanningMode.ACTIVE,
             )
-            self._start_scan()
-            return
-        if self.client.mech_status is None:
-            try:
-                await self.client.wait_for(Event.MechStatusEvent)
-            except TimeoutError:
-                pass
-        await self.populate_device_info()
-        self._start_scan()
-        
+        )
 
     async def disconnect(self):
-        self._stop_scan()
         await self.client.disconnect()
 
     async def populate_device_info(self) -> None:

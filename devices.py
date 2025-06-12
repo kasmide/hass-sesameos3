@@ -10,7 +10,7 @@ from homeassistant.helpers.device_registry import format_mac
 
 from sesameos3client import Event, SesameClient, EventData
 
-from .models import SesameDevice, SesameConfigEntry
+from .models import SesameDevice
 
 class Sesame5(SesameDevice):
     class MechStatusSensor(SensorEntity):
@@ -160,9 +160,6 @@ class Sesame5(SesameDevice):
             await self._client.set_mech_settings(new_settings)
 
     offers = [Platform.LOCK, Platform.NUMBER, Platform.SENSOR, Platform.BINARY_SENSOR]
-
-    def __init__(self, entry: SesameConfigEntry) -> None:
-        super().__init__(entry)
 
     async def populate_device_info(self) -> None:
         await super().populate_device_info()
