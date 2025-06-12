@@ -26,8 +26,6 @@ class Sesame5(SesameDevice):
                      default_disabled: bool = False) -> None:
             super().__init__()
             self._client = device.client
-            self._client.add_listener(Event.MechStatusEvent, self._on_mech_status)
-            self._client.on_disconnect(self._on_disconnect)
             self._value_name = attr_name
             self._attr_translation_key = attr_name
             self._attr_icon = icon
@@ -40,6 +38,11 @@ class Sesame5(SesameDevice):
                 self._attr_native_value = getattr(device.client.mech_status, self._value_name)
             else:
                 self._attr_available = False
+
+        async def async_added_to_hass(self) -> None:
+            await super().async_added_to_hass()
+            self._client.add_listener(Event.MechStatusEvent, self._on_mech_status)
+            self._client.on_disconnect(self._on_disconnect)
 
         def _on_mech_status(self, event: Event.MechStatusEvent, metadata) -> None:
             self._attr_native_value = getattr(event.response, self._value_name)
@@ -62,8 +65,6 @@ class Sesame5(SesameDevice):
                      default_disabled: bool = False) -> None:
             super().__init__()
             self._client = device.client
-            self._client.add_listener(Event.MechStatusEvent, self._on_mech_status)
-            self._client.on_disconnect(self._on_disconnect)
             self._value_name = attr_name
             self._attr_translation_key = attr_name
             self._attr_icon = icon
@@ -75,6 +76,11 @@ class Sesame5(SesameDevice):
                 self._attr_is_on = getattr(device.client.mech_status, self._value_name)
             else:
                 self._attr_available = False
+
+        async def async_added_to_hass(self) -> None:
+            await super().async_added_to_hass()
+            self._client.add_listener(Event.MechStatusEvent, self._on_mech_status)
+            self._client.on_disconnect(self._on_disconnect)
 
         def _on_mech_status(self, event: Event.MechStatusEvent, metadata) -> None:
             self._attr_is_on = getattr(event.response, self._value_name)
@@ -93,8 +99,6 @@ class Sesame5(SesameDevice):
         _attr_translation_key = "sesame_lock"
         def __init__(self, device: "Sesame5") -> None:
             self._client = device.client
-            self._client.add_listener(Event.MechStatusEvent, self._on_mech_status)
-            self._client.on_disconnect(self._on_disconnect)
             self._attr_unique_id = format_mac(device.entry.data[CONF_MAC])
             self._last_mechstatus = self._client.mech_status
             self._attr_name = None
@@ -104,6 +108,11 @@ class Sesame5(SesameDevice):
             else:
                 self._attr_is_locked = self._last_mechstatus.lock_range
             asyncio.create_task(self.set_changed_by())
+
+        async def async_added_to_hass(self) -> None:
+            await super().async_added_to_hass()
+            self._client.add_listener(Event.MechStatusEvent, self._on_mech_status)
+            self._client.on_disconnect(self._on_disconnect)
 
         async def async_lock(self, **kwargs) -> None:
             await self._client.lock("Home Assistant")
@@ -166,6 +175,11 @@ class Sesame5(SesameDevice):
             self._attr_native_min_value = value_range[0]
             self._attr_device_class = device_class
             self._attr_device_info = device.device_info
+
+        async def async_added_to_hass(self) -> None:
+            await super().async_added_to_hass()
+            self._client.add_listener(Event.MechSettingsEvent, self._on_mech_settings)
+            self._client.on_disconnect(self._on_disconnect)
 
         def _on_mech_settings(self, event: Event.MechSettingsEvent, metadata) -> None:
             self._attr_native_value = getattr(event.response, self._value_name)
