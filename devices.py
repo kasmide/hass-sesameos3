@@ -27,7 +27,7 @@ class Sesame5(SesameDevice):
             super().__init__()
             self._client = device.client
             self._client.add_listener(Event.MechStatusEvent, self._on_mech_status)
-            self._client.on_disconnect(lambda: setattr(self, "_attr_available", False))
+            self._client.on_disconnect(self._on_disconnect)
             self._value_name = attr_name
             self._attr_translation_key = attr_name
             self._attr_icon = icon
@@ -46,6 +46,10 @@ class Sesame5(SesameDevice):
             self._attr_available = True
             self.async_write_ha_state()
 
+        def _on_disconnect(self):
+            self._attr_available = False
+            self.async_write_ha_state()
+
     class MechStatusBinarySensor(BinarySensorEntity):
         _attr_has_entity_name = True
         _attr_should_poll = False
@@ -59,7 +63,7 @@ class Sesame5(SesameDevice):
             super().__init__()
             self._client = device.client
             self._client.add_listener(Event.MechStatusEvent, self._on_mech_status)
-            self._client.on_disconnect(lambda: setattr(self, "_attr_available", False))
+            self._client.on_disconnect(self._on_disconnect)
             self._value_name = attr_name
             self._attr_translation_key = attr_name
             self._attr_icon = icon
@@ -77,6 +81,10 @@ class Sesame5(SesameDevice):
             self._attr_available = True
             self.async_write_ha_state()
 
+        def _on_disconnect(self):
+            self._attr_available = False
+            self.async_write_ha_state()
+
     class SesameLock(LockEntity):
         _attr_has_entity_name = True
         _client: SesameClient
@@ -86,7 +94,7 @@ class Sesame5(SesameDevice):
         def __init__(self, device: "Sesame5") -> None:
             self._client = device.client
             self._client.add_listener(Event.MechStatusEvent, self._on_mech_status)
-            self._client.on_disconnect(lambda: setattr(self, "_attr_available", False))
+            self._client.on_disconnect(self._on_disconnect)
             self._attr_unique_id = format_mac(device.entry.data[CONF_MAC])
             self._last_mechstatus = self._client.mech_status
             self._attr_name = None
@@ -126,6 +134,10 @@ class Sesame5(SesameDevice):
                     case _:
                         self._attr_changed_by = None
             self.async_write_ha_state()
+
+        def _on_disconnect(self):
+            self._attr_available = False
+            self.async_write_ha_state()
     class MechSettingsEntryEntity(NumberEntity):
         _attr_has_entity_name = True
         _attr_should_poll = False
@@ -140,7 +152,7 @@ class Sesame5(SesameDevice):
             super().__init__()
             self._client = device.client
             self._client.add_listener(Event.MechSettingsEvent, self._on_mech_settings)
-            self._client.on_disconnect(lambda: setattr(self, "_attr_available", False))
+            self._client.on_disconnect(self._on_disconnect)
             self._value_name = attr_name
             if device.client.mech_settings is not None:
                 self._attr_native_value = getattr(device.client.mech_settings, self._value_name)
@@ -158,6 +170,10 @@ class Sesame5(SesameDevice):
         def _on_mech_settings(self, event: Event.MechSettingsEvent, metadata) -> None:
             self._attr_native_value = getattr(event.response, self._value_name)
             self._attr_available = True
+            self.async_write_ha_state()
+
+        def _on_disconnect(self):
+            self._attr_available = False
             self.async_write_ha_state()
 
         async def async_set_native_value(self, value: float) -> None:
