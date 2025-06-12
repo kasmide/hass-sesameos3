@@ -52,6 +52,7 @@ class SesameDevice(ABC):
 
     async def _on_found(self):
         if not self.client.is_connected:
+            await asyncio.sleep(2)
             await self.client.connect()
         if self.device_info is None:
             await self.populate_device_info()
