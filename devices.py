@@ -10,7 +10,7 @@ from homeassistant.helpers.device_registry import format_mac
 
 from sesameos3client import Event, SesameClient, EventData
 
-from .models import SesameDevice, SesameConfigEntry
+from .models import SesameDevice
 
 class Sesame5(SesameDevice):
     class MechStatusSensor(SensorEntity):
@@ -27,6 +27,7 @@ class Sesame5(SesameDevice):
             super().__init__()
             self._client = device.client
             self._client.add_listener(Event.MechStatusEvent, self._on_mech_status)
+            self._client.on_disconnect(lambda: setattr(self, "_attr_available", False))
             self._value_name = attr_name
             self._attr_translation_key = attr_name
             self._attr_icon = icon
@@ -58,6 +59,7 @@ class Sesame5(SesameDevice):
             super().__init__()
             self._client = device.client
             self._client.add_listener(Event.MechStatusEvent, self._on_mech_status)
+            self._client.on_disconnect(lambda: setattr(self, "_attr_available", False))
             self._value_name = attr_name
             self._attr_translation_key = attr_name
             self._attr_icon = icon
@@ -84,11 +86,14 @@ class Sesame5(SesameDevice):
         def __init__(self, device: "Sesame5") -> None:
             self._client = device.client
             self._client.add_listener(Event.MechStatusEvent, self._on_mech_status)
+            self._client.on_disconnect(lambda: setattr(self, "_attr_available", False))
             self._attr_unique_id = format_mac(device.entry.data[CONF_MAC])
             self._last_mechstatus = self._client.mech_status
             self._attr_name = None
             self._attr_device_info = device.device_info
-            if self._last_mechstatus is not None:
+            if self._last_mechstatus is None:
+                self._attr_available = False
+            else:
                 self._attr_is_locked = self._last_mechstatus.lock_range
             asyncio.create_task(self.set_changed_by())
 
@@ -99,6 +104,7 @@ class Sesame5(SesameDevice):
             await self._client.unlock("Home Assistant")
 
         async def _on_mech_status(self, event: Event.MechStatusEvent, metadata) -> None:
+            self._attr_available = True
             self._last_mechstatus = event.response
             self._attr_is_locked = self._last_mechstatus.lock_range
             self.async_write_ha_state()
@@ -134,6 +140,7 @@ class Sesame5(SesameDevice):
             super().__init__()
             self._client = device.client
             self._client.add_listener(Event.MechSettingsEvent, self._on_mech_settings)
+            self._client.on_disconnect(lambda: setattr(self, "_attr_available", False))
             self._value_name = attr_name
             if device.client.mech_settings is not None:
                 self._attr_native_value = getattr(device.client.mech_settings, self._value_name)
@@ -168,9 +175,6 @@ class Sesame5(SesameDevice):
 
 
     offers = [Platform.LOCK, Platform.NUMBER, Platform.SENSOR, Platform.BINARY_SENSOR]
-
-    def __init__(self, entry: SesameConfigEntry) -> None:
-        super().__init__(entry)
 
     async def populate_device_info(self) -> None:
         await super().populate_device_info()
