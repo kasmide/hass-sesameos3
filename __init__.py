@@ -10,7 +10,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: SesameConfigEntry) -> bo
     """Set up SesameOS 3 from a config entry."""
     entry.runtime_data = Sesame5(hass, entry)
     await entry.runtime_data.initialize()
-    entry.runtime_data.start_scanning()
     await hass.config_entries.async_forward_entry_setups(entry, entry.runtime_data.offers)
 
     return True

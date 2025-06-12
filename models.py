@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+import asyncio
 import base64
 from typing import Optional
 
@@ -28,8 +29,7 @@ class SesameDevice(ABC):
         self.entry = entry
 
     def _async_device_found(self, _service_info, change) -> None:
-        if not self.client.is_connected:
-            self.hass.async_create_task(self.initialize())
+        self.hass.async_create_task(self._on_found())
 
     async def initialize(self):
         if bluetooth.async_address_present(self.hass, self.entry.data[CONF_MAC], connectable=True):
@@ -41,16 +41,20 @@ class SesameDevice(ABC):
                 except TimeoutError:
                     pass
             await self.populate_device_info()
-
-    def start_scanning(self) -> None:
         self.entry.async_on_unload(
-            bluetooth.async_register_callback(
+           bluetooth.async_register_callback(
                 self.hass,
                 self._async_device_found,
                 {"address": self.entry.data[CONF_MAC]},
                 bluetooth.BluetoothScanningMode.ACTIVE,
             )
         )
+
+    async def _on_found(self):
+        if not self.client.is_connected:
+            await self.client.connect()
+        if self.device_info is None:
+            await self.populate_device_info()
 
     async def disconnect(self):
         await self.client.disconnect()
