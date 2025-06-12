@@ -6,6 +6,7 @@ from typing import Optional
 from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform, CONF_MAC
+from homeassistant.helpers import device_registry
 from homeassistant.helpers.device_registry import (
     format_mac,
     DeviceInfo,
@@ -19,14 +20,19 @@ type SesameConfigEntry = ConfigEntry[SesameDevice]
 
 class SesameDevice(ABC):
     offers: list[Platform] = []
-    device_info: Optional[DeviceInfo]
+    device_info: DeviceInfo
     def __init__(self, hass: HomeAssistant, entry: SesameConfigEntry) -> None:
         self.hass = hass
         self.client = SesameClient(
             entry.data[CONF_MAC], base64.b64decode(entry.data["private_key"])
         )
-        self.device_info = None
         self.entry = entry
+        self.device_info = DeviceInfo(
+            identifiers={(self.entry.domain, format_mac(self.entry.data[CONF_MAC]))},
+            connections={(CONNECTION_BLUETOOTH, self.entry.data[CONF_MAC])},
+            name=self.entry.title,
+            manufacturer="CANDY HOUSE JAPAN, Inc.",
+        )
 
     def _async_device_found(self, _service_info, change) -> None:
         self.hass.async_create_task(self._on_found())
@@ -61,12 +67,11 @@ class SesameDevice(ABC):
         await self.client.disconnect()
 
     async def populate_device_info(self) -> None:
-        self.device_info = DeviceInfo(
-            identifiers={(self.entry.domain, format_mac(self.entry.data[CONF_MAC]))},
-            connections={(CONNECTION_BLUETOOTH, self.entry.data[CONF_MAC])},
-            name=self.entry.title,
-            manufacturer="CANDY HOUSE JAPAN, Inc.",
-            sw_version=await self.client.get_version()
+        self.device_info["sw_version"] = await self.client.get_version()
+        device_registry.async_get(self.hass).async_get_or_create(
+            config_entry_id=self.entry.entry_id,
+            identifiers=self.device_info.get("identifiers"),
+            sw_version=self.device_info.get("sw_version"),
         )
     @abstractmethod
     def get_entities(self, entity_type: Platform):
