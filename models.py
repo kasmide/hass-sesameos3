@@ -1,8 +1,6 @@
 from abc import ABC, abstractmethod
-import asyncio
 import base64
-import logging
-from typing import Optional, TypeAlias, Callable
+from typing import Optional
 
 from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
@@ -16,9 +14,7 @@ from homeassistant.components import bluetooth
 
 from sesameos3client import Event, SesameClient
 
-SesameConfigEntry: TypeAlias = ConfigEntry
-
-_LOGGER = logging.getLogger(__name__)
+type SesameConfigEntry = ConfigEntry[SesameDevice]
 
 class SesameDevice(ABC):
     offers: list[Platform] = []
@@ -30,11 +26,6 @@ class SesameDevice(ABC):
         )
         self.device_info = None
         self.entry = entry
-        self._unsub_scanner: Optional[Callable[[], None]] = None
-        self.client.on_disconnect(self._on_client_disconnect)
-
-    def _on_client_disconnect(self) -> None:
-        pass
 
     def _async_device_found(self, _service_info, change) -> None:
         if not self.client.is_connected:
