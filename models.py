@@ -1,12 +1,12 @@
 from abc import ABC, abstractmethod
 import asyncio
 import base64
-from typing import Optional
 
 from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform, CONF_MAC
 from homeassistant.helpers import device_registry
+from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.device_registry import (
     format_mac,
     DeviceInfo,
@@ -21,6 +21,25 @@ type SesameConfigEntry = ConfigEntry[SesameDevice]
 class SesameDevice(ABC):
     offers: list[Platform] = []
     device_info: DeviceInfo
+
+    class Entity(Entity, ABC):
+        def __init__(self, device: "SesameDevice") -> None:
+            self._client = device.client
+            self._attr_available = self._client.is_connected
+
+        async def async_added_to_hass(self) -> None:
+            await super().async_added_to_hass()
+            self._client.on_disconnected(self._on_disconnected)
+            self._client.on_connected(self._on_connected)
+            
+        def _on_disconnected(self) -> None:
+            self._attr_available = False
+            self.async_write_ha_state()
+
+        def _on_connected(self) -> None:
+            self._attr_available = True
+            self.async_write_ha_state()
+
     def __init__(self, hass: HomeAssistant, entry: SesameConfigEntry) -> None:
         self.hass = hass
         self.client = SesameClient(
