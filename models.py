@@ -25,12 +25,12 @@ class SesameDevice(ABC):
     class Entity(Entity, ABC):
         def __init__(self, device: "SesameDevice") -> None:
             self._client = device.client
-            self._attr_available = self._client.is_connected
 
         async def async_added_to_hass(self) -> None:
             await super().async_added_to_hass()
             self._client.on_disconnected(self._on_disconnected)
             self._client.on_connected(self._on_connected)
+            self._attr_available = self._client.is_connected
             
         def _on_disconnected(self) -> None:
             self._attr_available = False
