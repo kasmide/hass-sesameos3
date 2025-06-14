@@ -107,7 +107,8 @@ class Sesame5(SesameDevice):
                 self._attr_available = False
             else:
                 self._attr_is_locked = self._last_mechstatus.lock_range
-            asyncio.create_task(self.set_changed_by())
+            if self._client.is_connected:
+                asyncio.create_task(self.set_changed_by())
 
         async def async_added_to_hass(self) -> None:
             await super().async_added_to_hass()
