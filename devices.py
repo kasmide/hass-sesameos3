@@ -108,13 +108,54 @@ class Sesame5(SesameDevice):
             await super().async_will_remove_from_hass()
 
         async def async_lock(self, **kwargs) -> None:
-            await self._client.lock("Home Assistant")
+            self._attr_assumed_state = True
+            self._attr_is_locking = True
+            self.async_write_ha_state()
+            try:
+                await asyncio.gather(
+                    self._client.lock("Home Assistant"),
+                    self._client.wait_for(Event.MechStatusEvent)
+                )
+            except Exception as e:
+                raise e
+            finally:
+                if self._attr_assumed_state:
+                    self._attr_is_locking = False
+                    self.async_write_ha_state()
 
         async def async_unlock(self, **kwargs) -> None:
-            await self._client.unlock("Home Assistant")
+            self._attr_assumed_state = True
+            self._attr_is_unlocking = True
+            self.async_write_ha_state()
+            try:
+                await asyncio.gather(
+                    self._client.unlock("Home Assistant"),
+                    self._client.wait_for(Event.MechStatusEvent)
+                )
+            except Exception as e:
+                raise e
+            finally:
+                if self._attr_assumed_state:
+                    self._attr_is_unlocking = False
+                    self.async_write_ha_state()
 
         async def _on_mech_status(self, event: Event.MechStatusEvent, metadata) -> None:
+            self._attr_assumed_state = False
             self._last_mechstatus = event.response
+            if not self._last_mechstatus.stop:
+                if self._client.mech_settings is None: # Keep these state unknown when we can't determine them
+                    self._attr_is_locking = None
+                    self._attr_is_unlocking = None
+                else:
+                    if self._last_mechstatus.clockwise == self._client.mech_settings.lock < self._client.mech_settings.unlock:
+                        self._attr_is_locking = True
+                        self._attr_is_unlocking = False
+                    else:
+                        self._attr_is_locking = False
+                        self._attr_is_unlocking = True
+            else:
+                self._attr_is_locking = False
+                self._attr_is_unlocking = False
             self._attr_is_locked = self._last_mechstatus.lock_range
             self.async_write_ha_state()
             await self.set_changed_by()
