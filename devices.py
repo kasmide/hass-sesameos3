@@ -83,13 +83,11 @@ class Sesame5(SesameDevice):
 
     class SesameLock(SesameDevice.Entity, LockEntity):
         _attr_has_entity_name = True
-        _client: SesameClient
         _last_mechstatus: Optional[EventData.MechStatus]
         _attr_should_poll = False
         _attr_translation_key = "sesame_lock"
         def __init__(self, device: "Sesame5") -> None:
             super().__init__(device)
-            self._client = device.client
             self._attr_unique_id = format_mac(device.entry.data[CONF_MAC])
             self._last_mechstatus = self._client.mech_status
             self._attr_name = None
@@ -189,7 +187,6 @@ class Sesame5(SesameDevice):
                      icon: str = "mdi:number",
                      device_class: Optional[NumberDeviceClass] = None) -> None:
             super().__init__(device)
-            self._client = device.client
             self._value_name = attr_name
             if device.client.mech_settings is not None:
                 self._attr_native_value = getattr(device.client.mech_settings, self._value_name)
