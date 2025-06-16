@@ -1,4 +1,16 @@
 {
+    "config": {
+        "step": {
+            "user": {
+                "title": "デバイスを追加",
+                "data": {
+                    "name": "名前",
+                    "mac": "MAC アドレス",
+                    "device_secret": "デバイスシークレット"
+                }
+            }
+        }
+    },
     "entity": {
         "binary_sensor": {
             "clutch_failed": {

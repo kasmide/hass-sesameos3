@@ -1,4 +1,16 @@
 {
+    "config": {
+        "step": {
+            "user": {
+                "title": "Add device",
+                "data": {
+                    "name": "Name",
+                    "mac": "MAC Address",
+                    "device_secret": "Device Secret"
+                }
+            }
+        }
+    },
     "entity": {
         "binary_sensor": {
             "clutch_failed": {
