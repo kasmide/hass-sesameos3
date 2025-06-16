@@ -23,12 +23,12 @@ STEP_USER_DATA_SCHEMA = vol.Schema(
     {
         vol.Required(CONF_NAME): str,
         vol.Required(CONF_MAC): str,
-        vol.Required("private_key"): str,
+        vol.Required("device_secret"): str,
     }
 )
 
 async def connection_trial(hass: HomeAssistant, data: dict[str, Any]) -> None:
-    client = SesameClient(data[CONF_MAC], base64.b64decode(data["private_key"]))
+    client = SesameClient(data[CONF_MAC], base64.b64decode(data["device_secret"]))
     await client.connect()
     await client.disconnect()
 

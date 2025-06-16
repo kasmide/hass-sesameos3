@@ -43,7 +43,7 @@ class SesameDevice(ABC):
     def __init__(self, hass: HomeAssistant, entry: SesameConfigEntry) -> None:
         self.hass = hass
         self.client = SesameClient(
-            entry.data[CONF_MAC], base64.b64decode(entry.data["private_key"])
+            entry.data[CONF_MAC], base64.b64decode(entry.data["device_secret"])
         )
         self.entry = entry
         self.device_info = DeviceInfo(
