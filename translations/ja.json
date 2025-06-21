@@ -2,12 +2,63 @@
     "config": {
         "step": {
             "user": {
-                "title": "デバイスを追加",
+                "title": "セットアップ方法",
+                "data": {
+                    "setup_method": "セットアップ方法"
+                },
+                "data_description": {
+                    "setup_method": "デバイスのセットアップ方法を選択してください"
+                }
+            },
+            "qr_code": {
+                "title": "QRコードセットアップ",
+                "description": "セサミデバイスのQRコード内容を入力してください。次のステップでデバイス名とシークレットが自動的に入力されます。",
+                "data": {
+                    "qr_code": "QRコード内容"
+                }
+            },
+            "manual": {
+                "title": "手動セットアップ",
                 "data": {
                     "name": "名前",
-                    "mac": "MAC アドレス",
+                    "mac": "MACアドレス",
                     "device_secret": "デバイスシークレット"
                 }
+            },
+            "device_info": {
+                "title": "デバイス情報",
+                "data": {
+                    "name": "名前",
+                    "mac": "MACアドレス",
+                    "device_secret": "デバイスシークレット"
+                }
+            },
+            "device_discovery": {
+                "title": "デバイス検索",
+                "description": "近くにあるデバイスを自動で見つけることができませんでした。\nデバイス: {device_name}\nUUID: {device_uuid}",
+                "data": {
+                    "action": "操作"
+                }
+            }
+        },
+        "error": {
+            "cannot_connect": "接続に失敗しました",
+            "invalid_qr_code": "無効なQRコード形式です",
+            "device_not_found": "近くにデバイスが見つかりません",
+            "unknown": "予期しないエラーが発生しました"
+        }
+    },
+    "selector": {
+        "setup_method": {
+            "options": {
+                "qr_code": "QRコード",
+                "manual": "手動セットアップ"
+            }
+        },
+        "action": {
+            "options": {
+                "retry": "再スキャン",
+                "manual": "手動入力"
             }
         }
     },

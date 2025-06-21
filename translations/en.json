@@ -2,12 +2,63 @@
     "config": {
         "step": {
             "user": {
-                "title": "Add device",
+                "title": "Setup Method",
+                "data": {
+                    "setup_method": "Setup Method"
+                },
+                "data_description": {
+                    "setup_method": "Choose how to set up your device"
+                }
+            },
+            "qr_code": {
+                "title": "QR Code Setup",
+                "description": "Enter the QR code content from your Sesame device. Device name and secret will be filled automatically in the next step.",
+                "data": {
+                    "qr_code": "QR Code Content"
+                }
+            },
+            "manual": {
+                "title": "Manual Setup",
                 "data": {
                     "name": "Name",
                     "mac": "MAC Address",
                     "device_secret": "Device Secret"
                 }
+            },
+            "device_info": {
+                "title": "Device Information",
+                "data": {
+                    "name": "Name",
+                    "mac": "MAC Address",
+                    "device_secret": "Device Secret"
+                }
+            },
+            "device_discovery": {
+                "title": "Device Discovery",
+                "description": "Could not automatically find your device nearby.\nDevice: {device_name}\nUUID: {device_uuid}",
+                "data": {
+                    "action": "Action"
+                }
+            }
+        },
+        "error": {
+            "cannot_connect": "Failed to connect",
+            "invalid_qr_code": "Invalid QR code format",
+            "device_not_found": "Device not found nearby",
+            "unknown": "Unexpected error occurred"
+        }
+    },
+    "selector": {
+        "setup_method": {
+            "options": {
+                "qr_code": "QR Code",
+                "manual": "Manual Setup"
+            }
+        },
+        "action": {
+            "options": {
+                "retry": "Retry Scan",
+                "manual": "Manual Entry"
             }
         }
     },
