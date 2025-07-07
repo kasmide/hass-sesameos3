@@ -114,8 +114,6 @@ class Sesame5(SesameDevice):
                     self._client.lock("Home Assistant"),
                     self._client.wait_for(Event.MechStatusEvent)
                 )
-            except Exception as e:
-                raise e
             finally:
                 if self._attr_assumed_state:
                     self._attr_is_locking = False
@@ -130,8 +128,6 @@ class Sesame5(SesameDevice):
                     self._client.unlock("Home Assistant"),
                     self._client.wait_for(Event.MechStatusEvent)
                 )
-            except Exception as e:
-                raise e
             finally:
                 if self._attr_assumed_state:
                     self._attr_is_unlocking = False
